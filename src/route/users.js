@@ -1,9 +1,17 @@
 import { Router } from "express";
 import _ from "lodash";
 import faker from "faker";
+import sequilize from "sequelize";
 faker.locale = "ko";
 
 const userRouter = Router();
+
+let users = [];
+
+const seq = new sequilize("express", "root", "1234", {
+  host: "localhost",
+  dialect: "mysql",
+});
 
 // 랜덤 숫자 생성
 const getRandomInt = (min, max) => {
@@ -12,56 +20,142 @@ const getRandomInt = (min, max) => {
   return Math.floor(Math.random() * (max - min) + min);
 };
 
-let users = [];
+const checkSequalizeAuth = async () => {
+  try {
+    await seq.authenticate();
+    console.log("DB 연결 성공");
+  } catch (err) {
+    console.log("DB 연결 실패:", err);
+  }
+};
+
+checkSequalizeAuth();
+
+const User = seq.define("user", {
+  name: {
+    type: sequilize.STRING,
+    allowNull: false,
+  },
+  age: {
+    type: sequilize.STRING,
+    allowNull: false,
+  },
+});
 
 // faker.js 를 사용하여 랜덤 데이터 집어넣기
-for (let i = 1; i < 100; i++) {
-  users.push({
-    id: i,
-    name: faker.name.lastName() + faker.name.firstName(),
-    age: getRandomInt(15, 40),
-  });
-}
+// for (let i = 1; i < 10000; i++) {
+//   users.push({
+//     id: i,
+//     name: faker.name.lastName() + faker.name.firstName(),
+//     age: getRandomInt(15, 40),
+//   });
+// }
+
+// // 유저 전체 조회
+// userRouter.get("/", (req, res) => {
+//   res.send({
+//     count: users.length,
+//     users,
+//   });
+// });
 
 // 유저 전체 조회
-userRouter.get("/", (req, res) => {
-  res.send({
-    count: users.length,
-    users,
-  });
-});
+userRouter.get("/", async (req, res) => {
+  const { name, age } = req.query;
+  const { Op } = sequilize;
+  try {
+    const findUserQuery = {
+      attributes: ["name", "age"],
+    };
+    let result;
+    if (name && age) {
+      findUserQuery["where"] = { na2me: { [Op.substring]: name }, age };
+    } else if (name) {
+      findUserQuery["where"] = { na2me: { [Op.substring]: name } };
+    } else if (age) {
+      findUserQuery["where"] = { age };
+    }
 
-//유저 id 값 조회
-userRouter.get("/:id", (req, res) => {
-  const findUser = _.find(users, { id: parseInt(req.params.id) });
-  let msg;
-  if (findUser) {
-    msg = "정상적으로 조회되었습니다.";
+    result = await User.findAll(findUserQuery);
+
     res.status(200).send({
-      msg,
-      findUser,
+      count: result.length,
+      result,
     });
-  } else {
-    msg = "해당 아이디를 가진 유저가 존재하지 않습니다.";
-    res.status(400).send({
-      msg,
-      findUser,
-    });
+  } catch (err) {
+    console.log(err);
   }
 });
+
+// //유저 id 값 조회
+// userRouter.get("/:id", (req, res) => {
+//   const findUser = _.find(users, { id: parseInt(req.params.id) });
+//   let msg;
+//   if (findUser) {
+//     msg = "정상적으로 조회되었습니다.";
+//     res.status(200).send({
+//       msg,
+//       findUser,
+//     });
+//   } else {
+//     msg = "해당 아이디를 가진 유저가 존재하지 않습니다.";
+//     res.status(400).send({
+//       msg,
+//       findUser,
+//     });
+//   }
+// });
+
+// 유저 생성
+// const UserCreate = async () => {
+//   try {
+//     await User.sync({ force: true });
+//     for (let i = 0; i < 100; i++) {
+//       User.create({
+//         // await -> 순서 보장
+//         name: faker.name.lastName() + faker.name.firstName(),
+//         age: getRandomInt(15, 40),
+//       });
+//     }
+//     console.log("성공");
+//   } catch (err) {
+//     console.log("에러", err);
+//   }
+// };
+
+// UserCreate();
 
 //유저생성
-userRouter.post("/", (req, res) => {
-  const createUser = req.body;
-  const check_user = _.find(users, ["id", createUser.id]);
+userRouter.post("/", async (req, res) => {
+  try {
+    const { name, age } = req.body;
+    if (!name || !age)
+      res.status(400).send({ msg: "입력요청값이 잘못되었습니다." });
 
-  let result;
-  if (!check_user && createUser.id && createUser.name && createUser.age) {
-    users.push(createUser);
-    result = `${createUser.name}님을 생성 했습니다.`;
-  } else {
-    result = "입력 요청값이 잘못되었습니다.";
+    const result = await User.create({
+      name,
+      age,
+    });
+    res.status(201).send({
+      msg: `id ${result.id}, ${result.name} 유저가 생성되었습니다.`,
+    });
+    console.log("유저 생성 성공");
+  } catch (err) {
+    console.log("실패", err);
+    res.status(500).send({ msg: "서버에 문제가 발생했습니다." });
   }
+
+  //   const check_user = _.find(users, ["id", createUser.id]);
+
+  //   let result;
+  //   if (!check_user && createUser.id && createUser.name && createUser.age) {
+  //     users.push(createUser);
+  //     result = `${createUser.name}님을 생성 했습니다.`;
+  //   } else {
+  //     result = "입력 요청값이 잘못되었습니다.";
+  //   }
+
+  // result = await User.findAll(findUserQuery);
   res.send({
     result,
   });
