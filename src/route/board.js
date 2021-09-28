@@ -1,34 +1,47 @@
 import { Router } from "express";
 import _ from "lodash";
+import faker from "faker";
+import sequilize from "sequelize";
+
+const seq = new sequilize("express", "root", "1234", {
+  host: "localhost",
+  dialect: "mysql",
+});
+
+const Board = seq.define("board", {
+  title: {
+    type: sequilize.STRING,
+    allowNull: false,
+  },
+  content: {
+    type: sequilize.TEXT,
+    allowNull: true,
+  },
+});
+
+const board_sync = async () => {
+  try {
+    await Board.sync({ force: true });
+    for (let i = 0; i < 10000; i++) {
+      await Board.create({
+        title: faker.lorem.sentences(1),
+        content: faker.lorem.sentences(10),
+      });
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+// board_sync();
 
 const boardRouter = Router();
 
-let boards = [
-  {
-    id: 1,
-    title: "1번쨰 게시물입니다.",
-    content: "1번쨰 게시물 내용입니다.",
-    createDate: "2021-09-07",
-    updateData: "2021-09-06",
-  },
-  {
-    id: 2,
-    title: "2번쨰 게시물입니다.",
-    content: "2번쨰 게시물 내용입니다.",
-    createDate: "2021-09-07",
-    updateData: "2021-09-06",
-  },
-  {
-    id: 3,
-    title: "3번쨰 게시물입니다.",
-    content: "3번쨰 게시물 내용입니다.",
-    createDate: "2021-09-07",
-    updateData: "2021-09-06",
-  },
-];
+let boards = [];
 
 // 게시판 전체 조회
-boardRouter.get("/", (req, res) => {
+boardRouter.get("/", async (req, res) => {
+  const boards = await Board.findAll();
   res.send({
     count: boards.length,
     boards,

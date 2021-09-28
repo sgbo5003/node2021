@@ -8,6 +8,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/users", userRouter);
-app.use("/board", boardRouter);
+app.use("/boards", boardRouter);
 
 app.listen(3000);
