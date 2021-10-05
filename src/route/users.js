@@ -86,6 +86,7 @@ userRouter.post("/", async (req, res) => {
       name,
       age,
     });
+    // await result.createPermission({title: "test", level: 3})
     res.status(201).send({
       msg: `id ${result.id}, ${result.name} 유저가 생성되었습니다.`,
     });

@@ -17,9 +17,9 @@ const user_sync = async () => {
     await User.sync({ force: true });
     for (let i = 0; i < 1000; i++) {
       const hashpwd = await bycrpt.hash("test1234", 10);
-      User.create({
+      await User.create({
         name: faker.name.lastName() + faker.name.firstName(),
-        age: getRandomInt(15, 40),
+        age: getRandomInt(15, 50),
         password: hashpwd,
       });
     }
@@ -28,15 +28,14 @@ const user_sync = async () => {
   }
 };
 
-// user_sync();
-
 const board_sync = async () => {
   try {
     await Board.sync({ force: true });
-    for (let i = 0; i < 10000; i++) {
+    for (let i = 0; i < 1000; i++) {
       await Board.create({
         title: faker.lorem.sentences(1),
         content: faker.lorem.sentences(10),
+        userId: getRandomInt(1, 1000),
       });
     }
   } catch (err) {
@@ -44,4 +43,5 @@ const board_sync = async () => {
   }
 };
 
-// board_sync();
+await user_sync();
+await board_sync();
