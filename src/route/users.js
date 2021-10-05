@@ -1,9 +1,8 @@
 import { Router } from "express";
-import _ from "lodash";
-import faker from "faker";
 import sequilize from "sequelize";
-import bycrpt from "bcrypt";
-faker.locale = "ko";
+import db from "../models/index.js";
+
+const User = db.User;
 
 const userRouter = Router();
 
@@ -11,13 +10,6 @@ const seq = new sequilize("express", "root", "1234", {
   host: "localhost",
   dialect: "mysql",
 });
-
-// 랜덤 숫자 생성
-const getRandomInt = (min, max) => {
-  min = Math.ceil(min);
-  max = Math.ceil(max);
-  return Math.floor(Math.random() * (max - min) + min);
-};
 
 const checkSequalizeAuth = async () => {
   try {
@@ -30,45 +22,12 @@ const checkSequalizeAuth = async () => {
 
 checkSequalizeAuth();
 
-const User = seq.define("user", {
-  name: {
-    type: sequilize.STRING,
-    allowNull: false,
-  },
-  age: {
-    type: sequilize.INTEGER,
-    allowNull: false,
-  },
-  password: {
-    type: sequilize.STRING,
-    allowNull: false,
-  },
-});
-
-// const initDb = async () => {
-//   await User.sync();
-//   await Board.sync();
-// };
-
-// initDb();
-
-const user_sync = async () => {
-  try {
-    await User.sync({ force: true });
-    for (let i = 0; i < 10000; i++) {
-      const hashpwd = await bycrpt.hash("test1234", 10);
-      User.create({
-        name: faker.name.lastName() + faker.name.firstName(),
-        age: getRandomInt(15, 40),
-        password: hashpwd,
-      });
-    }
-  } catch (err) {
-    console.log(err);
-  }
+const initDb = async () => {
+  await User.sync();
+  await Board.sync();
 };
 
-// user_sync();
+// initDb();
 
 // 유저 전체 조회
 userRouter.get("/", async (req, res) => {
@@ -116,25 +75,6 @@ userRouter.get("/", async (req, res) => {
 //   }
 // });
 
-// 유저 생성
-// const UserCreate = async () => {
-//   try {
-//     await User.sync({ force: true });
-//     for (let i = 0; i < 100; i++) {
-//       User.create({
-//         // await -> 순서 보장
-//         name: faker.name.lastName() + faker.name.firstName(),
-//         age: getRandomInt(15, 40),
-//       });
-//     }
-//     console.log("성공");
-//   } catch (err) {
-//     console.log("에러", err);
-//   }
-// };
-
-// UserCreate();
-
 //유저생성
 userRouter.post("/", async (req, res) => {
   try {
@@ -154,56 +94,7 @@ userRouter.post("/", async (req, res) => {
     console.log("실패", err);
     res.status(500).send({ msg: "서버에 문제가 발생했습니다." });
   }
-
-  //   const check_user = _.find(users, ["id", createUser.id]);
-
-  //   let result;
-  //   if (!check_user && createUser.id && createUser.name && createUser.age) {
-  //     users.push(createUser);
-  //     result = `${createUser.name}님을 생성 했습니다.`;
-  //   } else {
-  //     result = "입력 요청값이 잘못되었습니다.";
-  //   }
-
-  // result = await User.findAll(findUserQuery);
-  res.send({
-    result,
-  });
 });
-
-//name 변경
-// userRouter.put("/:id", (req, res) => {
-//   // users 안에서 현재 요청이 들어온 :id 값이 같은 애가 있는지 확인하고 있으면 index 값을 리턴, 없으면 -1을 리턴
-//   const check_user = _.find(users, ["id", parseInt(req.params.id)]);
-//   // const find_user_idx = _.findIndex(users);
-//   let result;
-//   // find_user_idx가 -1이 아니면? -> users안에 :id와 동일한 id를 가진 객체가 존재
-//   //   if(find_user_idx !== -1){
-//   // users[0] = { id: 1, name: "홍길동" , age: 21}
-//   //       users[find_user_idx].name = req.body.name;
-//   //       result = "성공적으로 수정 되었습니다.";
-//   //       res.status(200).send({
-//   //         result,
-//   //       });
-//   //   }
-//   if (check_user) {
-//     users = users.map((data) => {
-//       if (data.id === parseInt(req.params.id)) {
-//         data.name = req.body.name;
-//       }
-//       return data;
-//     });
-//     result = "성공적으로 수정 되었습니다.";
-//     res.status(200).send({
-//       result,
-//     });
-//   } else {
-//     result = `${req.params.id} 아이디를 가진 유저가 존재하지 않습니다.`;
-//     res.status(400).send({
-//       result,
-//     });
-//   }
-// });
 
 userRouter.put("/:id", async (req, res) => {
   try {

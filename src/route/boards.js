@@ -1,39 +1,7 @@
 import { Router } from "express";
-import _ from "lodash";
-import faker from "faker";
-import sequilize from "sequelize";
+import db from "../models/index.js";
 
-const seq = new sequilize("express", "root", "1234", {
-  host: "localhost",
-  dialect: "mysql",
-});
-
-const Board = seq.define("board", {
-  title: {
-    type: sequilize.STRING,
-    allowNull: false,
-  },
-  content: {
-    type: sequilize.TEXT,
-    allowNull: true,
-  },
-});
-
-const board_sync = async () => {
-  try {
-    await Board.sync({ force: true });
-    for (let i = 0; i < 10000; i++) {
-      await Board.create({
-        title: faker.lorem.sentences(1),
-        content: faker.lorem.sentences(10),
-      });
-    }
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-// board_sync();
+const Board = db.Board;
 
 const boardRouter = Router();
 
