@@ -262,27 +262,6 @@ userRouter.put("/:id", async (req, res) => {
   }
 });
 
-//user 지우기
-// userRouter.delete("/:id", (req, res) => {
-//   // lodash 의 _.find 를 이용해 요청이 들어온 :id 값을 가진 users 안의 객체가 있는지 체크
-//   const check_user = _.find(users, ["id", parseInt(req.params.id)]);
-//   let result;
-//   // 같은 아이디 값을 가진 값이 있으면?
-//   if (check_user) {
-//     // lodash의 reject 메서드를 이용해 해당 id를 가진 객체를 삭제
-//     users = _.reject(users, ["id", parseInt(req.params.id)]);
-//     result = "성공적으로 삭제 되었습니다.";
-//     res.status(200).send({
-//       result,
-//     });
-//   } else {
-//     result = `${req.params.id} 아이디를 가진 유저가 존재하지 않습니다.`;
-//     res.status(400).send({
-//       result,
-//     });
-//   }
-// });
-
 userRouter.delete("/:id", async (req, res) => {
   //auth체크 + 권한, 본인 체크
   try {
