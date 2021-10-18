@@ -1,33 +1,10 @@
 import { Router } from "express";
-import sequilize from "sequelize";
+import bcrypt from "bcrypt";
 import db from "../models/index.js";
 
-const User = db.User;
+const { User, Permission, Board } = db;
 
 const userRouter = Router();
-
-const seq = new sequilize("express", "root", "1234", {
-  host: "localhost",
-  dialect: "mysql",
-});
-
-const checkSequalizeAuth = async () => {
-  try {
-    await seq.authenticate();
-    console.log("DB 연결 성공");
-  } catch (err) {
-    console.log("DB 연결 실패:", err);
-  }
-};
-
-checkSequalizeAuth();
-
-const initDb = async () => {
-  await User.sync();
-  await Board.sync();
-};
-
-// initDb();
 
 // 유저 전체 조회
 userRouter.get("/", async (req, res) => {
@@ -36,6 +13,7 @@ userRouter.get("/", async (req, res) => {
   try {
     const findUserQuery = {
       attributes: ["id", "name", "age"],
+      include: [Permission],
     };
     let result;
     if (name && age) {
@@ -57,40 +35,55 @@ userRouter.get("/", async (req, res) => {
 });
 
 // //유저 id 값 조회
-// userRouter.get("/:id", (req, res) => {
-//   const findUser = _.find(users, { id: parseInt(req.params.id) });
-//   let msg;
-//   if (findUser) {
-//     msg = "정상적으로 조회되었습니다.";
-//     res.status(200).send({
-//       msg,
-//       findUser,
-//     });
-//   } else {
-//     msg = "해당 아이디를 가진 유저가 존재하지 않습니다.";
-//     res.status(400).send({
-//       msg,
-//       findUser,
-//     });
-//   }
-// });
+userRouter.get("/:id", async (req, res) => {
+  try {
+    const findUser = await User.findOne({
+      // include : [Permission, Board], // 모든 컬럼을 다 보고 싶으면
+      include: [
+        {
+          model: Permission,
+          attributes: ["id", "title", "level"],
+        },
+        {
+          model: Board,
+          attributes: ["id", "title"],
+        },
+      ],
+      where: {
+        id: req.params.id,
+      },
+    });
+    res.status(200).send({
+      findUser,
+    });
+  } catch (err) {
+    console.log("실패", err);
+    res.status(500).send({ msg: "서버에 문제가 발생했습니다." });
+  }
+});
 
 //유저생성
 userRouter.post("/", async (req, res) => {
   try {
-    const { name, age } = req.body;
-    if (!name || !age)
+    const { name, age, password, permission } = req.body; // permission 추가
+    if (!name || !age || !password || !permission)
       res.status(400).send({ msg: "입력요청값이 잘못되었습니다." });
+    else {
+      const hashpwd = await bcrypt.hash(password, 4); // password hash 처리
+      const user = await User.create({
+        name,
+        age,
+        password: hashpwd,
+      });
 
-    const result = await User.create({
-      name,
-      age,
-    });
-    // await result.createPermission({title: "test", level: 3})
-    res.status(201).send({
-      msg: `id ${result.id}, ${result.name} 유저가 생성되었습니다.`,
-    });
-    console.log("유저 생성 성공");
+      await user.createPermission({
+        title: permission.title,
+        level: permission.level,
+      }); // permission 생성
+      res.status(201).send({
+        msg: `id ${user.id}, ${user.name} 유저가 생성되었습니다.`,
+      });
+    }
   } catch (err) {
     console.log("실패", err);
     res.status(500).send({ msg: "서버에 문제가 발생했습니다." });
@@ -237,5 +230,26 @@ userRouter.get("/test/:id", async (req, res) => {
       .send({ msg: "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요." });
   }
 });
+
+// const seq = new sequilize("express", "root", "1234", {
+//   host: "localhost",
+//   dialect: "mysql",
+// });
+
+// const checkSequalizeAuth = async () => {
+//   try {
+//     await seq.authenticate();
+//     console.log("DB 연결 성공");
+//   } catch (err) {
+//     console.log("DB 연결 실패:", err);
+//   }
+// };
+
+// checkSequalizeAuth();
+
+// const initDb = async () => {
+//   await User.sync();
+//   await Board.sync();
+// };
 
 export default userRouter;

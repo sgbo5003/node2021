@@ -14,6 +14,7 @@ export default (sequelize, DataTypes) => {
     },
   });
   User.associate = function (models) {
+    models.User.belongsTo(models.Permission);
     models.User.hasMany(models.Board);
   };
   return User;

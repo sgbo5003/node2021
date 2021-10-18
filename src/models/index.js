@@ -25,15 +25,16 @@ sequelize
 const db = {
   User: User(sequelize, Sequelize.DataTypes),
   Board: Board(sequelize, Sequelize.DataTypes),
-  // Permission: Permission(sequelize, Sequelize.DataTypes),
+  Permission: Permission(sequelize, Sequelize.DataTypes),
 };
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 Object.keys(db).forEach((modelName) => {
+  // -> ["User", "Board", "Permission"].forEach()
   if (db[modelName].associate) {
-    db[modelName].associate(db);
+    db[modelName].associate(db); // associate 안에 할당한 함수를 실행
   }
 });
 
